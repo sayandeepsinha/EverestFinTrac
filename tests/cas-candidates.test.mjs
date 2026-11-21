@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {prepareCasCandidates} from '../lib/cas-candidates.mjs';
+const scheme={scheme:'Example Direct Growth',amfi:'118834',close:'10.000',valuation:{cost:'1000.00',date:'2026-10-31'}};
+const statement={file_type:'CAMS',investor_info:{name:'Private'},folios:[{folio:'private',schemes:[scheme]}],parse_warnings:[]};
+const result=prepareCasCandidates(statement);
+assert.deepEqual(result.candidates[0],{kind:'fund',symbol:'118834',name:'Example Direct Growth',shares:10,cost:100,statementDate:'2026-10-31'});
+assert(!JSON.stringify(result).includes('Private'));
+assert.equal(prepareCasCandidates({...statement,folios:[...statement.folios,...statement.folios]}).candidates.length,0);
+assert.equal(prepareCasCandidates({...statement,folios:[{schemes:[{...scheme,valuation:{cost:null}}]}]}).candidates.length,0);
+assert.equal(prepareCasCandidates({...statement,folios:[{schemes:[{...scheme,close_calculated:'11.0'}]}]}).candidates.length,0);
+assert.equal(prepareCasCandidates({...statement,folios:[{schemes:[{...scheme,valuation:{cost:null}},scheme]}]}).candidates.length,0);
+assert.throws(()=>prepareCasCandidates({file_type:'MFCENTRAL',folios:[]}));
+console.log('PASS: CAS candidate extraction, privacy, duplicate and unknown-cost handling');

@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {encryptBackup,decryptBackup} from '../lib/backup-crypto.mjs';
+const data={version:2,currency:'INR',transactions:[],holdings:[{name:'Private holding',shares:3}]};
+const encrypted=await encryptBackup(data,'a-long-passphrase');
+assert(!JSON.stringify(encrypted).includes('Private holding'));
+assert.deepEqual(await decryptBackup(encrypted,'a-long-passphrase'),data);
+await assert.rejects(()=>decryptBackup(encrypted,'wrong password'));
+await assert.rejects(()=>encryptBackup(data,'short'));
+const changed={...encrypted,data:encrypted.data.slice(0,-4)+'AAAA'};
+await assert.rejects(()=>decryptBackup(changed,'a-long-passphrase'));
+console.log('PASS: encrypted backup round trip, wrong password and tampering');
